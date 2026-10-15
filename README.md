@@ -1,6 +1,6 @@
 ## Termux 手绘工作流接入
 
-新增直接连接微软翻译与语音服务的命令行入口，默认参数为：晓辰 `zh-CN-XiaochenNeural`、标准语速 `speed=1.0`（`+0%`）、标准音调 `pitch=0`、新闻播报 `newscast`。保持网页入口和已有 Worker 部署方式。
+新增直接连接微软翻译与语音服务的命令行入口，默认参数为：晓辰 `zh-CN-XiaochenNeural`、快速 `speed=1.25`（`+25%`）、标准音调 `pitch=0`、新闻播报 `newscast`。保持网页入口和已有 Worker 部署方式。
 
 需要 Python 3 和 Node.js 22+（内置 WebSocket），无需安装 Azure SDK 或本地声音模型：
 

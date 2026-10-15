@@ -45,7 +45,7 @@ ENDPOINT='https://dev.microsofttranslator.com/apps/endpoint?api-version=1.0'
 USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0'
 # Public application signing constant used by the source project, not a user API key.
 APP_KEY='oik6PdDdMnOXemTbwvMn9de/h9lFnfBaCWbGMMZqqoSaQaqUOqjVGm5NqsmjcBI1x+sS9ugjB55HEJWRiFXYFw=='
-DEFAULTS={'voice':'zh-CN-XiaochenNeural','speed':1.0,'pitch':0,'volume':0,'style':'newscast'}
+DEFAULTS={'voice':'zh-CN-XiaochenNeural','speed':1.25,'pitch':0,'volume':0,'style':'newscast'}
 
 
 def parameters(settings=None):
