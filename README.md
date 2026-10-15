@@ -1,3 +1,21 @@
+## Termux 手绘工作流接入
+
+新增直接连接微软翻译与语音服务的命令行入口，默认参数为：晓辰 `zh-CN-XiaochenNeural`、快速 `speed=1.25`（`+25%`）、标准音调 `pitch=0`、新闻播报 `newscast`。保持网页入口和已有 Worker 部署方式。
+
+需要 Python 3 和 Node.js 22+（内置 WebSocket），无需安装 Azure SDK 或本地声音模型：
+
+```sh
+python termux/microsoft_tts.py --text-file script.txt --output narration.wav --timestamps narration-events.json
+```
+
+整篇文稿只合成一次；输出24kHz单声道PCM16 WAV，同时保存这一次合成的原生 WordBoundary/SentenceBoundary。事件 Offset/Duration 单位为100纳秒，换算秒除以10000000。音频与事件必须成对使用，不能把另一轮合成的时间戳套到已有音频上。语速已由微软应用，不再叠加本地变速。
+
+可用 `--voice`、`--speed`、`--pitch`、`--style` 调整参数。已有输出不会覆盖。不传 `--timestamps` 时使用上游同源 REST 请求生成 WAV，仅需 Python；合成仍需联网。临时令牌不写入日志或命令行参数。
+
+手绘工程中的分镜/字幕映射及配置入口见 [工作流接入说明](https://github.com/Marcus1337X/sweety-handdraw-video-termux/blob/main/docs/microsoft-tts.md)。原生时间信息不代替实际试听与逐字发音验收。
+
+---
+
 # 🎙️ VoiceCraft - AI驱动的语音处理平台
 
 一个功能强大的AI语音处理平台，集成了文字转语音(TTS)和语音转文字(STT)双向功能。基于Microsoft Edge TTS和硅基流动API，支持20+种语音选项，为用户提供完整的语音处理解决方案。
