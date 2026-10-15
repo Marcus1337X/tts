@@ -12,7 +12,7 @@ python termux/microsoft_tts.py --text-file script.txt --output narration.wav --t
 
 可用 `--voice`、`--speed`、`--pitch`、`--style` 调整参数。已有输出不会覆盖。不传 `--timestamps` 时使用上游同源 REST 请求生成 WAV，仅需 Python；合成仍需联网。临时令牌不写入日志或命令行参数。
 
-手绘工程中的分镜/字幕映射及配置入口见 [工作流接入说明](https://github.com/Marcus1337X/sweety-handdraw-video-termux/blob/main/docs/microsoft-tts.md)。原生时间信息不代替实际试听与逐字发音验收。
+手绘工程可用这些原生事件映射分镜与短句字幕。原生时间信息不代替实际试听与逐字发音验收。
 
 ---
 
