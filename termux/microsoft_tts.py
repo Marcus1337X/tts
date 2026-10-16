@@ -46,7 +46,7 @@ USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 # Public application signing constant used by the source project, not a user API key.
 APP_KEY='oik6PdDdMnOXemTbwvMn9de/h9lFnfBaCWbGMMZqqoSaQaqUOqjVGm5NqsmjcBI1x+sS9ugjB55HEJWRiFXYFw=='
 DEFAULTS={'voice':'zh-CN-XiaochenNeural','speed':1.25,'pitch':0,'volume':0,'style':'newscast',
-          'sentence_pause':400,'comma_pause':100}
+          'sentence_pause':400,'comma_pause':None}
 
 
 def parameters(settings=None):
@@ -61,6 +61,7 @@ def parameters(settings=None):
             raise ValueError(f'Invalid {key}')
     for key in ('sentence_pause','comma_pause'):
         value=result[key]
+        if key=='comma_pause' and value is None: continue
         if isinstance(value,str):
             match=re.fullmatch(r'(\d+)(?:ms)?',value)
             if not match: raise ValueError(f'{key} must be an integer number of milliseconds')
@@ -110,15 +111,15 @@ def ssml(text,settings=None):
         raise ValueError('Narration contains invalid XML control characters')
     rate=math.trunc((settings['speed']-1)*100)
     pitch=math.trunc(settings['pitch']);volume=math.trunc(settings['volume']*100)
-    # WordBoundary metadata disables Comma-exact. Use explicit breaks for both
-    # punctuation classes. Disable the natural sentence-boundary pause so the
+    # WordBoundary metadata disables Comma-exact. Use explicit breaks only for
+    # configured pauses. Disable the natural sentence-boundary pause so the
     # requested break is not added on top of it. Preserve all original text.
     parts=[];cursor=0
     for match in re.finditer(r'[，,]|[。！？!?]+|\.(?=\s|$)',text):
         parts.append(escape(text[cursor:match.end()],quote=True));cursor=match.end()
         if text[cursor:].strip(' \r\n\t“”‘’"\''):
             key='comma_pause' if match.group() in ('，',',') else 'sentence_pause'
-            parts.append(f'<break time="{settings[key]}ms"/>')
+            if settings[key] is not None: parts.append(f'<break time="{settings[key]}ms"/>')
     parts.append(escape(text[cursor:],quote=True))
     spoken=''.join(parts)
     body=(f'<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" version="1.0" xml:lang="zh-CN">'
@@ -186,7 +187,7 @@ def main():
     parser.add_argument('--pitch',type=float,default=DEFAULTS['pitch'])
     parser.add_argument('--style',default=DEFAULTS['style'])
     parser.add_argument('--sentence-pause',default=DEFAULTS['sentence_pause'],help='Exact sentence pause, e.g. 400ms')
-    parser.add_argument('--comma-pause',default=DEFAULTS['comma_pause'],help='Comma pause, e.g. 100ms')
+    parser.add_argument('--comma-pause',default=DEFAULTS['comma_pause'],help='Optional comma pause; omit for natural punctuation timing')
     parser.add_argument('--timestamps',type=Path,help='Write native synthesis events from the same turn; requires Node.js 22+')
     args=parser.parse_args()
     if args.output.exists(): raise FileExistsError(f'Existing audio preserved: {args.output}')

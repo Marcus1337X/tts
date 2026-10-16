@@ -1,6 +1,6 @@
 ## Termux 手绘工作流接入
 
-新增直接连接微软翻译与语音服务的命令行入口，默认参数为：晓辰 `zh-CN-XiaochenNeural`、快速 `speed=1.25`（`+25%`）、标准音调 `pitch=0`、新闻播报 `newscast`，句间停顿400ms、逗号停顿100ms。保持网页入口和已有 Worker 部署方式。
+新增直接连接微软翻译与语音服务的命令行入口，默认参数为：晓辰 `zh-CN-XiaochenNeural`、快速 `speed=1.25`（`+25%`）、标准音调 `pitch=0`、新闻播报 `newscast`，句间停顿400ms，逗号使用自然停顿。保持网页入口和已有 Worker 部署方式。
 
 需要 Python 3 和 Node.js 22+（内置 WebSocket），无需安装 Azure SDK 或本地声音模型：
 
@@ -10,7 +10,7 @@ python termux/microsoft_tts.py --text-file script.txt --output narration.wav --t
 
 整篇文稿只合成一次；输出24kHz单声道PCM16 WAV，同时保存这一次合成的原生 WordBoundary/SentenceBoundary。事件 Offset/Duration 单位为100纳秒，换算秒除以10000000。音频与事件必须成对使用，不能把另一轮合成的时间戳套到已有音频上。语速已由微软应用，不再叠加本地变速。
 
-可用 `--voice`、`--speed`、`--pitch`、`--style` 调整参数；停顿支持 `--sentence-pause 400ms`、`--comma-pause 100ms`（整数毫秒或带ms后缀，0–20000ms）。按标点插入显式停顿，避免与原句停顿叠加，末句后不额外加句间停顿。已有输出不会覆盖。不传 `--timestamps` 时使用上游同源 REST 请求生成 WAV，仅需 Python；合成仍需联网。临时令牌不写入日志或命令行参数。
+可用 `--voice`、`--speed`、`--pitch`、`--style` 调整参数；停顿支持 `--sentence-pause 400ms`、`--comma-pause 100ms`（整数毫秒或带ms后缀，0–20000ms）。默认只在句间插入400ms停顿，逗号不插入额外break；显式传入--comma-pause才覆盖逗号停顿。末句后不额外加句间停顿。已有输出不会覆盖。不传 `--timestamps` 时使用上游同源 REST 请求生成 WAV，仅需 Python；合成仍需联网。临时令牌不写入日志或命令行参数。
 
 手绘工程可用这些原生事件映射分镜与短句字幕。原生时间信息不代替实际试听与逐字发音验收。
 
