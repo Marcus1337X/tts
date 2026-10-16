@@ -45,7 +45,8 @@ ENDPOINT='https://dev.microsofttranslator.com/apps/endpoint?api-version=1.0'
 USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36 Edg/127.0.0.0'
 # Public application signing constant used by the source project, not a user API key.
 APP_KEY='oik6PdDdMnOXemTbwvMn9de/h9lFnfBaCWbGMMZqqoSaQaqUOqjVGm5NqsmjcBI1x+sS9ugjB55HEJWRiFXYFw=='
-DEFAULTS={'voice':'zh-CN-XiaochenNeural','speed':1.25,'pitch':0,'volume':0,'style':'newscast'}
+DEFAULTS={'voice':'zh-CN-XiaochenNeural','speed':1.25,'pitch':0,'volume':0,'style':'newscast',
+          'sentence_pause':400,'comma_pause':100}
 
 
 def parameters(settings=None):
@@ -58,6 +59,15 @@ def parameters(settings=None):
     for key in ('voice','style'):
         if not isinstance(result[key],str) or not re.fullmatch(r'[A-Za-z0-9_:.-]+',result[key]):
             raise ValueError(f'Invalid {key}')
+    for key in ('sentence_pause','comma_pause'):
+        value=result[key]
+        if isinstance(value,str):
+            match=re.fullmatch(r'(\d+)(?:ms)?',value)
+            if not match: raise ValueError(f'{key} must be an integer number of milliseconds')
+            value=int(match.group(1))
+        if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or int(value)!=value or not 0<=value<=20000:
+            raise ValueError(f'{key} must be within 0..20000 milliseconds')
+        result[key]=int(value)
     return {key:result[key] for key in DEFAULTS}
 
 
@@ -100,9 +110,21 @@ def ssml(text,settings=None):
         raise ValueError('Narration contains invalid XML control characters')
     rate=math.trunc((settings['speed']-1)*100)
     pitch=math.trunc(settings['pitch']);volume=math.trunc(settings['volume']*100)
+    # WordBoundary metadata disables Comma-exact. Use explicit breaks for both
+    # punctuation classes. Disable the natural sentence-boundary pause so the
+    # requested break is not added on top of it. Preserve all original text.
+    parts=[];cursor=0
+    for match in re.finditer(r'[，,]|[。！？!?]+|\.(?=\s|$)',text):
+        parts.append(escape(text[cursor:match.end()],quote=True));cursor=match.end()
+        if text[cursor:].strip(' \r\n\t“”‘’"\''):
+            key='comma_pause' if match.group() in ('，',',') else 'sentence_pause'
+            parts.append(f'<break time="{settings[key]}ms"/>')
+    parts.append(escape(text[cursor:],quote=True))
+    spoken=''.join(parts)
     body=(f'<speak xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" version="1.0" xml:lang="zh-CN">'
-          f'<voice name="{settings["voice"]}"><mstts:express-as style="{settings["style"]}" styledegree="2.0" role="default">'
-          f'<prosody rate="{rate:+d}%" pitch="{pitch:+d}Hz" volume="{volume:+d}%">{escape(text,quote=True)}</prosody>'
+          f'<voice name="{settings["voice"]}"><mstts:silence type="Sentenceboundary-exact" value="0ms"/>'
+          f'<mstts:express-as style="{settings["style"]}" styledegree="2.0" role="default">'
+          f'<prosody rate="{rate:+d}%" pitch="{pitch:+d}Hz" volume="{volume:+d}%">{spoken}</prosody>'
           '</mstts:express-as></voice></speak>')
     if len(body.encode())>64000:
         raise ValueError('Complete narration SSML exceeds 64 KB; no audio has been split or generated')
@@ -163,11 +185,13 @@ def main():
     parser.add_argument('--speed',type=float,default=DEFAULTS['speed'])
     parser.add_argument('--pitch',type=float,default=DEFAULTS['pitch'])
     parser.add_argument('--style',default=DEFAULTS['style'])
+    parser.add_argument('--sentence-pause',default=DEFAULTS['sentence_pause'],help='Exact sentence pause, e.g. 400ms')
+    parser.add_argument('--comma-pause',default=DEFAULTS['comma_pause'],help='Comma pause, e.g. 100ms')
     parser.add_argument('--timestamps',type=Path,help='Write native synthesis events from the same turn; requires Node.js 22+')
     args=parser.parse_args()
     if args.output.exists(): raise FileExistsError(f'Existing audio preserved: {args.output}')
     if args.timestamps and args.timestamps.exists(): raise FileExistsError(f'Existing timestamps preserved: {args.timestamps}')
-    settings={key:getattr(args,key) for key in ('voice','speed','pitch','style')}
+    settings={key:getattr(args,key) for key in ('voice','speed','pitch','style','sentence_pause','comma_pause')}
     if args.timestamps:
         audio,report,events=synthesize_with_boundaries(args.text_file.read_text(),settings)
     else: audio,report=synthesize(args.text_file.read_text(),settings)
